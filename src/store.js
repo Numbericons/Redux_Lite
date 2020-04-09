@@ -19,4 +19,8 @@ export default class Store extends React.Component {
   getState(){
     return this.deepDupe(obj);
   }
+
+  dispatch(action){
+    this.state = this.rootReducer(this.state,action)
+  }
 }

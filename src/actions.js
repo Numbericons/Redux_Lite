@@ -21,7 +21,7 @@ function combineReducers(map){
     let newState = Object.assign(prevState);
 
     for (let i=0; i<keys.length; i++){
-      newState[keys[i]] = reducerMap[keys[i]](newState, action);
+      newState[keys[i]] = reducerMap[keys[i]](newState, action)[keys[i]];
     }
 
     return newState;
@@ -31,7 +31,8 @@ function combineReducers(map){
 const myNoiseReducer = (prevState = "peace and quiet", action) => {
   switch (action.type) {
     case "noisy action":
-      return action.noise;
+      return {noise: action.noise};
+      // return action.noise;
     default:
       return prevState;
   }
@@ -66,7 +67,6 @@ newState = myRootReducer(newState, myNoisyAction)
 myRootReducer(newState, myInconsequentialAction)
 // => { noise: "Car alarm" }
 
-myRootReducer(newState, myInconsequentialAction)
 
 
 // const map = {
