@@ -4,9 +4,12 @@
 class Store {
   constructor( rootReducer ) {
     this.rootReducer = rootReducer;
-    this.state = {};
+    this.state = rootReducer({});
     this.subscriptions = [];
+
     this.getState = this.getState.bind(this);
+    this.dispatch = this.dispatch.bind(this);
+    this.subscribe = this.subscribe.bind(this);
   }
 
   // deepDupe(obj){
@@ -24,26 +27,15 @@ class Store {
   }
 
   dispatch(action){
-    const result = this.rootReducer(this.state,action, this.subscriptions)
-    if (result !== this.state) {
-      result = this.subscriptionCbs();
-    }
-    this.state = result;
+    this.state = this.rootReducer(this.state, action, this.subscriptions);
   }
 
   subscribe(cb){
     this.subscriptions.push(cb);
   }
-
-  subscriptionCbs(){
-    let newState = Object.assign(this.state);
-    this.subscriptions.forEach(sub => {
-      newState = sub(newState);
-    })
-    return newState;
-  }
 }
 
+const createStore = (...args) => new Store(...args);
 // function combineReducers(map) {
 //   return function _combineReducers(prevState, action) {
 //     const reducerMap = map;
@@ -66,17 +58,26 @@ class Store {
 // }
 
 const combineReducers = config => {
-  return (prevState, action) => {
+  return (prevState, action, subscriptions) => {
     const nextState = {};
+    let stateChanged = false;
     Object.keys(config).forEach(k => {
       if (!action) {
         const args = [, { type: "__initialize" }];
         nextState[k] = config[k](...args);
+        stateChanged = true;
       } else {
-        nextState[k] = config[k](prevState[k], action);
+        const next = config[k](prevState[k], action);
+        if (next !== prevState[k]) stateChanged = true;
+        nextState[k] = next;
       }
     });
-    return nextState;
+
+    if (stateChanged) {
+      if (subscriptions) subscriptions.forEach(cb => cb(nextState));
+      return nextState;
+    }
+    return prevState;
   }
 }
 
